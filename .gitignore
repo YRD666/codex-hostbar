@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+.env
+.env.*
+*.pem
+*.key
+*.log
+auth.json
+config.toml
+.codex/
+INSTALL-MANIFEST.json

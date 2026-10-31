@@ -1,0 +1,19 @@
+name: Tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install terminal dependency
+        run: sudo apt-get update && sudo apt-get install -y tmux
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Check public source and history
+        run: python3 scripts/check_public.py

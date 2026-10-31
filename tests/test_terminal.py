@@ -1,0 +1,120 @@
+import fcntl
+import importlib.util
+import os
+from pathlib import Path
+import pty
+import select
+import shutil
+import signal
+import struct
+import subprocess
+import sys
+import tempfile
+import termios
+import time
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('hostbar', ROOT / 'hostbar.py')
+h = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(h)
+
+
+@unittest.skipUnless(sys.platform == 'linux' and shutil.which('tmux'), 'requires Linux and tmux')
+class TerminalTests(unittest.TestCase):
+    def test_resize_dialog_copy_mode_and_ctrl_z(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # Paths and labels that must never be evaluated as shell/tmux code.
+            folder = Path(tmp) / "a ' space $chars#here"
+            folder.mkdir()
+            script = folder / 'hostbar.py'
+            shutil.copyfile(ROOT / 'hostbar.py', script)
+            fake = folder / 'fake codex'
+            shutil.copyfile(ROOT / 'tests/fake_codex.py', fake)
+            fake.chmod(0o755)
+            config = Path(tmp) / 'tmux.conf'
+            config.write_text(h.tmux_config())
+            sock = str(Path(tmp) / 'test.sock')
+            master, slave = pty.openpty()
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 24, 80, 0, 0))
+            env = os.environ.copy()
+            env.pop('TMUX', None)
+            env.update(TERM='xterm-256color', CODEX_HOSTBAR_PYTHON=sys.executable,
+                       CODEX_HOSTBAR_SCRIPT=str(script),
+                       CODEX_HOSTBAR_LABEL='demo #(touch NEVER) #{host}',
+                       CODEX_HOSTBAR_DATA_PATH='', CODEX_HOSTBAR_LANGUAGE='en')
+            proc = subprocess.Popen(['tmux', '-u', '-S', sock, '-f', str(config),
+                                     'new-session', '-s', 'test', '--', str(fake), '--fixture'],
+                                    stdin=slave, stdout=slave, stderr=slave,
+                                    env=env, start_new_session=True)
+            os.close(slave)
+            output = bytearray()
+
+            def drain():
+                while select.select([master], [], [], 0)[0]:
+                    try:
+                        chunk = os.read(master, 65536)
+                    except OSError:
+                        break
+                    if not chunk:
+                        break
+                    output.extend(chunk)
+
+            def wait_for(check, description):
+                deadline = time.monotonic() + 8
+                while time.monotonic() < deadline:
+                    drain()
+                    try:
+                        if check():
+                            return
+                    except (OSError, subprocess.SubprocessError, ValueError):
+                        pass
+                    time.sleep(0.05)
+                self.fail(description + '\n' + output[-2000:].decode(errors='replace'))
+
+            def state():
+                result = subprocess.check_output(['tmux', '-S', sock, 'display-message',
+                    '-p', '#{pane_width} #{pane_height} #{cursor_y}'], text=True,
+                    stderr=subprocess.DEVNULL)
+                return tuple(map(int, result.split()))
+
+            def send(*args):
+                subprocess.run(['tmux', '-S', sock, *args], check=True,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            def folded(width, height):
+                actual_width, actual_height, cursor = state()
+                return (actual_width, actual_height) == (width, height) and cursor < height - 2
+
+            try:
+                wait_for(lambda: folded(80, 24), 'initial native footer was not folded')
+                wait_for(lambda: b'RAM' in output and b'2 warnings' in output,
+                         'status output missing')
+                for width, height in ((100, 32), (120, 40), (80, 24)):
+                    fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack('HHHH', height, width, 0, 0))
+                    # This test client has no controlling TTY; emulate its resize signal.
+                    proc.send_signal(signal.SIGWINCH)
+                    wait_for(lambda: folded(width, height), 'resize or composer redraw failed')
+                send('send-keys', '-l', 'd')
+                wait_for(lambda: state()[1] == 22, 'dialog viewport was cropped')
+                send('send-keys', '-l', 'c')
+                wait_for(lambda: state()[1] == 24, 'chat footer did not fold again')
+                send('copy-mode')
+                wait_for(lambda: state()[1] == 22, 'copy mode viewport was cropped')
+                send('send-keys', '-X', 'cancel')
+                wait_for(lambda: state()[1] == 24, 'copy mode exit failed')
+                os.write(master, b'\x1a')
+                wait_for(lambda: proc.poll() is not None, 'Ctrl+Z did not detach')
+                self.assertEqual(proc.returncode, 0)
+                self.assertFalse((ROOT / 'NEVER').exists())
+            finally:
+                subprocess.run(['tmux', '-S', sock, 'kill-server'],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if proc.poll() is None:
+                    proc.terminate()
+                proc.wait(timeout=5)
+                os.close(master)
+
+
+if __name__ == '__main__':
+    unittest.main()
