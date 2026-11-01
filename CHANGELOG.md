@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Keep the footer folded when typing during a running task displays `tab to queue message` or its compact form.
+- Preserve the queue hint beside the model and quota information.
+- Check periodic terminal refresh while a running-task draft is present.
+
 ## 0.1.4
 
 - Keep the composer footer folded while selection or scrollback navigation hints

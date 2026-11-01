@@ -128,6 +128,15 @@ class TerminalTests(unittest.TestCase):
                     env=env, text=True)
                 self.assertIn('GPT-Example high', typed_header)
                 self.assertTrue(folded(80, 24), 'typed composer footer was not folded')
+                send('send-keys', '-l', 'r')
+                wait_for(lambda: 'tab to queue message' in pane_text(), 'queue hint missing')
+                # Exercise periodic status refresh, without manually calling the
+                # renderer: typing during a running task must remain folded.
+                stable_until = time.monotonic() + 3
+                while time.monotonic() < stable_until:
+                    drain()
+                    self.assertTrue(folded(80, 24), 'running-task draft exposed a third row')
+                    time.sleep(0.1)
                 send('send-keys', '-l', 's')
                 wait_for(lambda: 'enter copy & follow' in pane_text(), 'selection fixture missing')
                 selected_header = subprocess.check_output([

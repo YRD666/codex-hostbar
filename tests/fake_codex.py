@@ -12,6 +12,7 @@ draft = False
 transcript = False
 wheel_scrolled = False
 selected = False
+queued = False
 
 
 def draw(*_):
@@ -29,6 +30,8 @@ def draw(*_):
         out += f'\x1b[{height-1};1HGPT-Example high · weekly 80% left · Context 99% left'
         if selected:
             out += f'\x1b[{height};1H^c copy · enter copy & follow · esc clear'
+        elif queued:
+            out += f'\x1b[{height};1Htab to queue message'
         out += f'\x1b[{height-3};7H'
     else:
         out += f'\x1b[{height-3};1H> Draft input'
@@ -71,6 +74,10 @@ while True:
         transcript = False
         wheel_scrolled = False
         selected = False
+        queued = False
+    if char == b'r':
+        queued = True
+        draft = True
     if char == b's':
         selected = True
         draft = True

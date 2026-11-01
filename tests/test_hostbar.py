@@ -50,6 +50,17 @@ class FooterTests(unittest.TestCase):
                 'GPT-Example high · weekly 80% left · Context 99% left', '']
         self.assertIsNone(h.combine(rows, 100))
 
+    def test_draft_during_running_task_keeps_queue_hint_folded(self):
+        for hints in ('tab to queue message', 'tab to queue'):
+            rows = ['› 你好', '', self.rows[0], hints]
+            result = h.combine(rows, 135)
+            self.assertIsNotNone(result)
+            self.assertIn('GPT-Example', result)
+            self.assertIn(hints, result)
+            for width in range(35, 136):
+                self.assertLessEqual(h.cells(h.combine(rows, width)), width)
+            self.assertIsNone(h.combine(['other screen', '', self.rows[0], hints], 135))
+
     def test_selection_and_scrollback_footer_keep_composer_folded(self):
         for hints in ('^c copy · enter copy & follow · esc clear',
                       'enter copy & follow · esc clear', 'esc clear',

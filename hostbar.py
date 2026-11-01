@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -59,7 +59,7 @@ def combine(rows, width):
     has_composer = any(re.match(r'^\s*›(?:\s|$)', line) for line in rows[:-2])
     interaction_hints = has_composer and bool(re.fullmatch(
         r'(?:(?:(?:\^c|⌃c|ctrl\+c) copy · )?enter copy & follow · esc clear'
-        r'|enter copy\+↓ · esc|esc clear'
+        r'|enter copy\+↓ · esc|esc clear|tab to queue(?: message)?'
         r'|(?:(?:New activity · )?(?:Earlier messages available\.  )?'
         r'|↑ Loading earlier messages… · )(?:enter/esc|esc) latest)'
         r'(?: · \? shortcuts)?', hints))
