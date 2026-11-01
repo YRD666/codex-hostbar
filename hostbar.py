@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -166,13 +166,15 @@ set -g status-right ''
 set -g status-format[0] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-footer "#{socket_path}" "#{pane_id}" "#{client_height}" "#{client_width}")'
 set -g status-format[1] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-host "#{client_width}")'
 set -g history-limit 50000
-set -g mouse off
+set -g mouse on
 set -g default-terminal 'tmux-256color'
 set -g allow-rename off
 set -g set-titles off
 set -g destroy-unattached on
 set -g detach-on-destroy on
 set -as terminal-overrides ',xterm*:smcup@:rmcup@'
+bind -n WheelUpPane if-shell -F '#{mouse_any_flag}' 'send-keys -M' 'send-keys PageUp'
+bind -n WheelDownPane if-shell -F '#{mouse_any_flag}' 'send-keys -M' 'send-keys PageDown'
 bind -n S-PageUp send-keys C-t
 bind -n C-z detach-client
 bind -T copy-mode q send-keys -X cancel

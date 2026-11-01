@@ -51,8 +51,9 @@ selected path. By default, `/srv` is shown only when it is a mount point;
 - Use at least 80 columns for useful detail. Narrow screens truncate values;
   fewer than 35 columns or 10 rows disables folding. Complex emoji widths are
   approximate.
-- `F2`: native warning panel. `Shift+PageUp`: open Codex Transcript; use
-  `PageUp` / `PageDown` to scroll and `Esc` to return.
+- The mouse wheel scrolls Codex history directly; `PageUp` / `PageDown` also
+  work. `Shift+PageUp` opens Codex Transcript, `Esc` returns, and `F2` opens
+  the native warning panel.
 - **Ctrl+Z closes this private terminal session, not Unix suspend.** `fg` cannot
   restore it. Use `codex-hostbar -- resume --last` where appropriate. Hostbar
   does not explicitly stop the shared Codex daemon or other tmux sessions.

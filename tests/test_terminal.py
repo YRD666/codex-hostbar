@@ -22,8 +22,14 @@ spec.loader.exec_module(h)
 
 @unittest.skipUnless(sys.platform == 'linux' and shutil.which('tmux'), 'requires Linux and tmux')
 class TerminalTests(unittest.TestCase):
-    def test_shift_page_up_opens_codex_transcript(self):
+    def test_history_inputs_reach_codex(self):
         config = h.tmux_config()
+        self.assertIn('set -g mouse on', config)
+        self.assertNotIn('set -g mouse off', config)
+        self.assertIn("bind -n WheelUpPane if-shell -F '#{mouse_any_flag}' "
+                      "'send-keys -M' 'send-keys PageUp'", config)
+        self.assertIn("bind -n WheelDownPane if-shell -F '#{mouse_any_flag}' "
+                      "'send-keys -M' 'send-keys PageDown'", config)
         self.assertIn('bind -n S-PageUp send-keys C-t', config)
         self.assertNotIn('bind -n S-PageUp copy-mode', config)
 
@@ -83,6 +89,11 @@ class TerminalTests(unittest.TestCase):
                     stderr=subprocess.DEVNULL)
                 return tuple(map(int, result.split()))
 
+            def mouse_capture_active():
+                result = subprocess.check_output(['tmux', '-S', sock, 'display-message',
+                    '-p', '#{mouse_any_flag}'], text=True, stderr=subprocess.DEVNULL)
+                return result.strip() == '1'
+
             def send(*args):
                 subprocess.run(['tmux', '-S', sock, *args], check=True,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -99,6 +110,12 @@ class TerminalTests(unittest.TestCase):
                 wait_for(lambda: folded(80, 24), 'initial native footer was not folded')
                 wait_for(lambda: b'RAM' in output and b'2 warnings' in output,
                          'status output missing')
+                wait_for(mouse_capture_active, 'Codex mouse capture did not reach the client')
+                os.write(master, b'\x1b[<64;10;10M')
+                wait_for(lambda: 'OLDER HISTORY FROM MOUSE WHEEL' in pane_text(),
+                         'mouse wheel did not reach Codex history')
+                send('send-keys', '-l', 'c')
+                wait_for(lambda: folded(80, 24), 'history fixture did not return to chat')
                 for width, height in ((100, 32), (120, 40), (80, 24)):
                     fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack('HHHH', height, width, 0, 0))
                     # This test client has no controlling TTY; emulate its resize signal.

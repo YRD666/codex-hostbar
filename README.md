@@ -18,7 +18,7 @@
 - 模型、推理级别、周配额、上下文、Token 用量与警告合并显示；内容以 Codex 实际提供的信息为准。
 - 内存、根盘和可选数据盘实时显示，支持中文和英文标签。
 - 外层状态文字为白色，Codex 状态颜色关闭；不会把整个聊天界面强制变成白色。
-- `F2` 查看警告；`Shift+PageUp` 打开 Codex Transcript，使用 `PageUp` / `PageDown` 滚动，`Esc` 返回。
+- 鼠标滚轮直接滚动 Codex 历史；也可用 `PageUp` / `PageDown`。`Shift+PageUp` 打开 Codex Transcript，`Esc` 返回；`F2` 查看警告。
 - `Ctrl+Z` 关闭当前 Hostbar 终端会话。**这不是 Unix 挂起**，不能用 `fg` 恢复；需要时用 `codex-hostbar -- resume --last` 重开。不会主动停止 Codex 共享后台服务或其他 tmux 会话。
 - 不修改全局 tmux 配置、Codex 配置文件、网络或代理设置，不读取登录凭据。原有代理环境或 Codex 启动包装器继续生效。
 

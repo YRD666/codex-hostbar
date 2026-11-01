@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Keep mouse support enabled in the private tmux server so Codex captures wheel
+  events and scrolls fullscreen conversation history.
+- Add PTY regression coverage for Codex's tmux mouse probe and wheel delivery.
+
 ## 0.1.2
 
 - Make `Shift+PageUp` open Codex's native Transcript view so earlier

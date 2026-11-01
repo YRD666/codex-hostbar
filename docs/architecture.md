@@ -29,6 +29,10 @@ does not write pane captures or chat history to disk. Fullscreen Codex owns the
 conversation transcript; `Shift+PageUp` forwards Codex's native Transcript
 shortcut, and scrolling happens inside that view.
 
+The private tmux server keeps mouse support enabled. Codex probes tmux's mouse
+option at startup and suppresses its own mouse capture when tmux reports it as
+off; keeping it on lets wheel events reach the fullscreen transcript.
+
 Executable and prompt arguments are passed as an argv list, never concatenated
 into a shell command. Status helper paths are expanded from quoted environment
 variables. Status output strips control characters and escapes tmux `#` markers.
