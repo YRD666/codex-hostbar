@@ -25,8 +25,8 @@ spec.loader.exec_module(h)
 class TerminalTests(unittest.TestCase):
     def test_history_inputs_reach_codex(self):
         config = h.tmux_config()
-        self.assertIn('set -g mouse on', config)
-        self.assertNotIn('set -g mouse off', config)
+        self.assertIn('set -g mouse off', config)
+        self.assertNotIn('set -g mouse on', config)
         self.assertIn("bind -n WheelUpPane if-shell -F '#{mouse_any_flag}' "
                       "'send-keys -M' 'send-keys PageUp'", config)
         self.assertIn("bind -n WheelDownPane if-shell -F '#{mouse_any_flag}' "
@@ -111,10 +111,10 @@ class TerminalTests(unittest.TestCase):
                 wait_for(lambda: folded(80, 24), 'initial native footer was not folded')
                 wait_for(lambda: b'RAM' in output and b'2 warnings' in output,
                          'status output missing')
-                wait_for(mouse_capture_active, 'Codex mouse capture did not reach the client')
-                os.write(master, b'\x1b[<64;10;10M')
+                self.assertFalse(mouse_capture_active(), 'default session stole terminal selection')
+                os.write(master, b'\x1b[5~')
                 wait_for(lambda: 'OLDER HISTORY FROM MOUSE WHEEL' in pane_text(),
-                         'mouse wheel did not reach Codex history')
+                         'PageUp did not reach Codex history')
                 send('send-keys', '-l', 'c')
                 wait_for(lambda: folded(80, 24), 'history fixture did not return to chat')
                 for width, height in ((100, 32), (120, 40), (80, 24)):
@@ -155,6 +155,20 @@ class TerminalTests(unittest.TestCase):
                          'Shift+PageUp did not open the Codex transcript at full viewport')
                 send('send-keys', 'Escape')
                 wait_for(lambda: state()[1] == 24, 'transcript exit failed')
+                # Switching an existing mouse-capturing app back to local
+                # selection must not require a restart or clear its draft.
+                send('set-option', '-g', 'mouse', 'on')
+                send('send-keys', '-l', 'a')
+                wait_for(mouse_capture_active, 'fixture did not enable application mouse')
+                send('send-keys', '-l', 'i')
+                wait_for(lambda: '你好' in pane_text(), 'draft fixture missing')
+                send('set-option', '-g', 'mouse', 'off')
+                wait_for(lambda: not mouse_capture_active(),
+                         'live application kept intercepting local selections')
+                self.assertIn('你好', pane_text(), 'releasing mouse cleared the draft')
+                self.assertTrue(folded(80, 24))
+                send('send-keys', '-l', 'c')
+                send('set-option', '-g', 'mouse', 'on')
                 send('send-keys', '-l', 'm')
                 wait_for(lambda: not mouse_capture_active(), 'fixture still captures mouse')
                 for key_table in ('emacs', 'vi'):

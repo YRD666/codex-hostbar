@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -145,12 +145,29 @@ def tmux(sock, *args):
                                    stderr=subprocess.DEVNULL, timeout=2)
 
 
+def release_mouse(captured, enabled, pane_tty):
+    """Honor mouse-off for Codex processes started before the option changed."""
+    if captured != '1' or enabled not in ('0', 'off'):
+        return
+    if not re.fullmatch(r'/dev/pts/[0-9]+', pane_tty):
+        return
+    # Write only mouse-mode resets to the pane's output side. This does not
+    # inject input, clear its screen, or restart the running Codex process.
+    fd = os.open(pane_tty, os.O_WRONLY | os.O_NOCTTY | os.O_NONBLOCK)
+    try:
+        os.write(fd, b'\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l')
+    finally:
+        os.close(fd)
+
+
 def render_footer(args):
     sock, pane, height, width = args
     height, width = int(height), int(width)
     state = tmux(sock, 'display-message', '-p', '-t', pane,
-                 '#{pane_height} #{pane_width} #{pane_in_mode}').split()
-    pane_height, pane_width, in_mode = map(int, state)
+                 '#{pane_height} #{pane_width} #{pane_in_mode} '
+                 '#{mouse_any_flag} #{mouse} #{pane_tty}').split()
+    pane_height, pane_width, in_mode = map(int, state[:3])
+    release_mouse(*state[3:])
     if in_mode:
         # Resizing a tmux copy-mode snapshot clears its selection. Keep its
         # geometry until the user finishes copying; live chat resumes afterward.
@@ -179,7 +196,7 @@ set -g status-right ''
 set -g status-format[0] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-footer "#{socket_path}" "#{pane_id}" "#{client_height}" "#{client_width}")'
 set -g status-format[1] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-host "#{client_width}")'
 set -g history-limit 50000
-set -g mouse on
+set -g mouse off
 set -s set-clipboard external
 set -g default-terminal 'tmux-256color'
 set -g allow-rename off

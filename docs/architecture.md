@@ -36,9 +36,13 @@ does not write pane captures or chat history to disk. Fullscreen Codex owns the
 conversation transcript; `Shift+PageUp` forwards Codex's native Transcript
 shortcut, and scrolling happens inside that view.
 
-The private tmux server keeps mouse support enabled. Codex probes tmux's mouse
-option at startup and suppresses its own mouse capture when tmux reports it as
-off; keeping it on lets wheel events reach the fullscreen transcript.
+The private tmux server defaults to mouse off, preserving local selection and
+copy shortcuts in the outer terminal without requiring OSC 52. Codex probes
+this option at startup. For an already-running process with capture still
+enabled, the status helper writes only mouse-disable sequences to the pane's
+output TTY when the option is off. It does not send keystrokes, reset the screen,
+or restart Codex. Keyboard PageUp/PageDown still reach Codex history; wheel
+handling belongs to the outer terminal in this mode.
 
 Executable and prompt arguments are passed as an argv list, never concatenated
 into a shell command. Status helper paths are expanded from quoted environment

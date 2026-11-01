@@ -58,7 +58,7 @@ while True:
             char += os.read(sys.stdin.fileno(), 64)
     if not char or char == b'q':
         break
-    if char.startswith(b'\x1b[<64;') and char.endswith(b'M'):
+    if char == b'\x1b[5~' or (char.startswith(b'\x1b[<64;') and char.endswith(b'M')):
         wheel_scrolled = True
     if char == b'\x14':
         transcript = True
@@ -87,5 +87,8 @@ while True:
     if char == b'm':
         # Older running Codex sessions may have started with capture disabled.
         sys.stdout.write('\x1b[?1000l\x1b[?1006l')
+        sys.stdout.flush()
+    if char == b'a':
+        sys.stdout.write('\x1b[?1000h\x1b[?1006h')
         sys.stdout.flush()
     draw()

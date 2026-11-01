@@ -51,19 +51,16 @@ selected path. By default, `/srv` is shown only when it is a mount point;
 - Use at least 80 columns for useful detail. Narrow screens truncate values;
   fewer than 35 columns or 10 rows disables folding. Complex emoji widths are
   approximate.
-- The mouse wheel scrolls Codex history directly; `PageUp` / `PageDown` also
-  work. `Shift+PageUp` opens Codex Transcript, `Esc` returns, and `F2` opens
-  the native warning panel.
-- In older sessions without Codex mouse capture, tmux handles drag selection.
-  Release keeps the selection; `Ctrl+C` or `Enter` copies, and `Esc` cancels.
-  Status refreshes preserve the selection's window size.
-- Copies are kept in the private tmux buffer and forwarded to the SSH client's
-  clipboard using OSC 52. The client must support and allow clipboard writes;
-  a successful server-side copy does not confirm desktop clipboard delivery.
-  Use your terminal's paste action for desktop clipboard text. A raw `Ctrl+V`
-  sent to Codex cannot read your computer's clipboard over SSH. tmux's default
-  `Ctrl+B`, then `]` pastes its last copied buffer, which may differ from the
-  desktop clipboard. Many terminals also support Shift+drag for local selection.
+- The outer terminal owns mouse selection, copying and wheel handling by default.
+  Use its existing copy/paste shortcuts; local selection does not require OSC 52.
+- Use `PageUp` / `PageDown` to browse Codex history, and `Esc` to return to the
+  latest content. `Shift+PageUp` forwards Codex's detailed transcript shortcut;
+  `F2` opens the native warning panel.
+- If you explicitly enter tmux copy mode (`Ctrl+B`, then `[`), `Ctrl+C` or
+  `Enter` copies the selection and `Esc` cancels. Status refreshes preserve its
+  geometry. This explicit mode uses OSC 52 to forward copies to the desktop,
+  which requires client support. `Ctrl+B`, then `]` pastes the tmux buffer;
+  it may differ from the desktop clipboard.
 - **Ctrl+Z closes this private terminal session, not Unix suspend.** `fg` cannot
   restore it. Use `codex-hostbar -- resume --last` where appropriate. Hostbar
   does not explicitly stop the shared Codex daemon or other tmux sessions.

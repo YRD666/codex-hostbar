@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Restore terminal-owned mouse selection by default. Enabling tmux mouse capture in 0.1.3 intercepted local selections and made copying depend on OSC 52 support.
+- Release mouse capture in already-running sessions when the private tmux mouse option is off, without clearing drafts, resetting the screen, or restarting Codex.
+- Keep the typed-footer fixes and keyboard history navigation. Mouse-wheel handling now belongs to the outer terminal by default.
+
 ## 0.1.6
 
 - Preserve tmux selections across status refreshes by keeping copy-mode geometry stable.
