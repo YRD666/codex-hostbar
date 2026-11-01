@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -151,6 +151,10 @@ def render_footer(args):
     state = tmux(sock, 'display-message', '-p', '-t', pane,
                  '#{pane_height} #{pane_width} #{pane_in_mode}').split()
     pane_height, pane_width, in_mode = map(int, state)
+    if in_mode:
+        # Resizing a tmux copy-mode snapshot clears its selection. Keep its
+        # geometry until the user finishes copying; live chat resumes afterward.
+        return ' ' + fit('Codex · Ctrl+C copy · Esc cancel', width - 1)
     rows = tmux(sock, 'capture-pane', '-p', '-t', pane,
                 '-S', str(max(0, pane_height - 12))).splitlines()
     header = None
@@ -176,6 +180,7 @@ set -g status-format[0] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --int
 set -g status-format[1] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-host "#{client_width}")'
 set -g history-limit 50000
 set -g mouse on
+set -s set-clipboard external
 set -g default-terminal 'tmux-256color'
 set -g allow-rename off
 set -g set-titles off
@@ -188,6 +193,14 @@ bind -n S-PageUp send-keys C-t
 bind -n C-z detach-client
 bind -T copy-mode q send-keys -X cancel
 bind -T copy-mode-vi q send-keys -X cancel
+bind -T copy-mode MouseDragEnd1Pane send-keys -X stop-selection
+bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X stop-selection
+bind -T copy-mode C-c if-shell -F '#{selection_present}' 'send-keys -X copy-selection-and-cancel' 'send-keys -X cancel'
+bind -T copy-mode-vi C-c if-shell -F '#{selection_present}' 'send-keys -X copy-selection-and-cancel' 'send-keys -X cancel'
+bind -T copy-mode Enter send-keys -X copy-selection-and-cancel
+bind -T copy-mode-vi Enter send-keys -X copy-selection-and-cancel
+bind -T copy-mode Escape send-keys -X cancel
+bind -T copy-mode-vi Escape send-keys -X cancel
 '''
 
 

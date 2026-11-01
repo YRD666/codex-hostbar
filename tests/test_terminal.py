@@ -1,4 +1,5 @@
 import fcntl
+import base64
 import importlib.util
 import os
 from pathlib import Path
@@ -154,10 +155,38 @@ class TerminalTests(unittest.TestCase):
                          'Shift+PageUp did not open the Codex transcript at full viewport')
                 send('send-keys', 'Escape')
                 wait_for(lambda: state()[1] == 24, 'transcript exit failed')
-                send('copy-mode')
-                wait_for(lambda: state()[1] == 22, 'copy mode viewport was cropped')
-                send('send-keys', '-X', 'cancel')
-                wait_for(lambda: state()[1] == 24, 'copy mode exit failed')
+                send('send-keys', '-l', 'm')
+                wait_for(lambda: not mouse_capture_active(), 'fixture still captures mouse')
+                for key_table in ('emacs', 'vi'):
+                    send('set-window-option', 'mode-keys', key_table)
+                    os.write(master, b'\x1b[<0;1;1M\x1b[<32;7;1M')
+
+                    def selection_present():
+                        return subprocess.check_output(['tmux', '-S', sock,
+                            'display-message', '-p', '#{selection_present}'],
+                            text=True).strip() == '1'
+
+                    wait_for(selection_present, 'mouse drag did not select text')
+                    # A periodic status refresh must not resize away the selection.
+                    until = time.monotonic() + 2
+                    while time.monotonic() < until:
+                        drain()
+                        self.assertTrue(selection_present(), 'refresh erased mouse selection')
+                        self.assertEqual(state()[1], 24)
+                        time.sleep(0.1)
+                    os.write(master, b'\x1b[<0;7;1m')
+                    time.sleep(0.2)
+                    self.assertTrue(selection_present(), 'mouse release discarded selection')
+                    output.clear()
+                    os.write(master, b'\x03')
+                    # tmux's emacs selection excludes the endpoint; vi includes it.
+                    expected = b'Fixtur' if key_table == 'emacs' else b'Fixture'
+                    encoded = base64.b64encode(expected)
+                    wait_for(lambda: b'\x1b]52;' in output and encoded in output,
+                             'Ctrl+C did not forward selected text to the terminal clipboard')
+                    self.assertEqual(subprocess.check_output(
+                        ['tmux', '-S', sock, 'show-buffer']), expected)
+                    wait_for(lambda: folded(80, 24), 'copy exit changed the chat layout')
                 os.write(master, b'\x1a')
                 wait_for(lambda: proc.poll() is not None, 'Ctrl+Z did not detach')
                 self.assertEqual(proc.returncode, 0)

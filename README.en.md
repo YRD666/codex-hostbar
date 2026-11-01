@@ -44,7 +44,7 @@ selected path. By default, `/srv` is shown only when it is a mount point;
 ## Behavior and limitations
 
 - A private tmux server folds recognized native fullscreen footer rows into one.
-  Unknown screens, warning panels and copy mode regain the normal viewport on
+  Unknown screens and warning panels regain the normal viewport on
   the next refresh (approximately one second). The external title becomes `Codex`.
 - Supports the English footer text structure observed in Codex 0.166.0. Upstream
   changes may produce extra native rows. This is not an upstream rendering API.
@@ -54,6 +54,16 @@ selected path. By default, `/srv` is shown only when it is a mount point;
 - The mouse wheel scrolls Codex history directly; `PageUp` / `PageDown` also
   work. `Shift+PageUp` opens Codex Transcript, `Esc` returns, and `F2` opens
   the native warning panel.
+- In older sessions without Codex mouse capture, tmux handles drag selection.
+  Release keeps the selection; `Ctrl+C` or `Enter` copies, and `Esc` cancels.
+  Status refreshes preserve the selection's window size.
+- Copies are kept in the private tmux buffer and forwarded to the SSH client's
+  clipboard using OSC 52. The client must support and allow clipboard writes;
+  a successful server-side copy does not confirm desktop clipboard delivery.
+  Use your terminal's paste action for desktop clipboard text. A raw `Ctrl+V`
+  sent to Codex cannot read your computer's clipboard over SSH. tmux's default
+  `Ctrl+B`, then `]` pastes its last copied buffer, which may differ from the
+  desktop clipboard. Many terminals also support Shift+drag for local selection.
 - **Ctrl+Z closes this private terminal session, not Unix suspend.** `fg` cannot
   restore it. Use `codex-hostbar -- resume --last` where appropriate. Hostbar
   does not explicitly stop the shared Codex daemon or other tmux sessions.

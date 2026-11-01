@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Preserve tmux selections across status refreshes by keeping copy-mode geometry stable.
+- Keep fallback mouse selections after release; Ctrl+C or Enter copies them, and Esc cancels.
+- Verify selected bytes reach both the tmux paste buffer and the terminal clipboard escape sequence in emacs and vi modes.
+- Document the boundary between remote copies and the SSH client's desktop clipboard.
+
 ## 0.1.5
 
 - Keep the footer folded when typing during a running task displays `tab to queue message` or its compact form.

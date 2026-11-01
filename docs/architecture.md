@@ -13,11 +13,18 @@ The two native rows then extend below the visible pane area, while the composer
 stays above them. Hostbar combines their information in its first status row.
 The second row is generated from `/proc/meminfo` and `statvfs`.
 
-If the footer is unrecognized, a menu opens, copy mode is active, or the terminal
+If the footer is unrecognized, a menu opens, or the terminal
 is too small, the window height returns to client height minus two. Unknown
 screens are not intentionally cropped. A resize can take one refresh cycle to
 settle. This adapter depends on upstream layout details and is deliberately
 limited to known text patterns; it is not a general-purpose screen parser.
+
+While tmux copy mode is active, the status renderer leaves window geometry
+unchanged: a resize would erase the snapshot's selection. The first status row
+shows copy/cancel keys until copy mode ends. Fallback mouse selection remains
+after release; Ctrl+C/Enter copies to the tmux buffer and requests an OSC 52
+clipboard write to the attached terminal. Esc cancels without copying. Clipboard
+acceptance and desktop paste shortcuts remain the SSH client's responsibility.
 
 ## Isolation and data
 
@@ -52,5 +59,6 @@ Unit tests cover width limits, Chinese text, warning priority, inline/menu
 rejection, metrics, argument preservation and safe install/uninstall behavior.
 The tmux integration test launches a deterministic simulated fullscreen program
 in a real pseudo-terminal, resizes it, opens a mock dialog and Transcript, enters
-copy mode and exits with Ctrl+Z. Real Codex compatibility must also be checked
+copy mode, holds a mouse selection across refreshes, checks copied bytes in the
+tmux buffer and terminal output, and exits with Ctrl+Z. Real Codex compatibility must also be checked
 manually for each newly supported version.

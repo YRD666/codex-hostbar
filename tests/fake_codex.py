@@ -84,4 +84,8 @@ while True:
     if char == b'i':
         dialog = False
         draft = True
+    if char == b'm':
+        # Older running Codex sessions may have started with capture disabled.
+        sys.stdout.write('\x1b[?1000l\x1b[?1006l')
+        sys.stdout.flush()
     draw()
