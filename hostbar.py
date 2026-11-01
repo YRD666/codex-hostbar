@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -56,11 +56,20 @@ def combine(rows, width):
     status, hints = (safe_text(line).strip() for line in rows[-2:])
     native_status = r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b'
     native_hints = r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt'
+    has_composer = any(re.match(r'^\s*›(?:\s|$)', line) for line in rows[:-2])
+    interaction_hints = has_composer and bool(re.fullmatch(
+        r'(?:(?:(?:\^c|⌃c|ctrl\+c) copy · )?enter copy & follow · esc clear'
+        r'|enter copy\+↓ · esc|esc clear'
+        r'|(?:(?:New activity · )?(?:Earlier messages available\.  )?'
+        r'|↑ Loading earlier messages… · )(?:enter/esc|esc) latest)'
+        r'(?: · \? shortcuts)?', hints))
     if not status or not re.search(native_status, status):
         return None
     if re.search(native_hints, hints):
         pass
-    elif not hints and any(re.match(r'^\s*›(?:\s|$)', line) for line in rows[:-2]):
+    elif interaction_hints:
+        pass
+    elif not hints and has_composer:
         # Codex hides the hint row while the composer contains text. The blank
         # final row plus a nearby composer prompt distinguishes that state from
         # an arbitrary status-like line on an unknown screen.
@@ -68,7 +77,7 @@ def combine(rows, width):
     else:
         return None
     warning = re.search(r'⚠\s*\d+\s+warnings?', hints)
-    right = warning.group() + ' · f2' if warning else ''
+    right = hints if interaction_hints else warning.group() + ' · f2' if warning else ''
     if right and cells(right) + 2 >= width:
         return fit(right, width)
     left = status

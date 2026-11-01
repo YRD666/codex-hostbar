@@ -128,6 +128,14 @@ class TerminalTests(unittest.TestCase):
                     env=env, text=True)
                 self.assertIn('GPT-Example high', typed_header)
                 self.assertTrue(folded(80, 24), 'typed composer footer was not folded')
+                send('send-keys', '-l', 's')
+                wait_for(lambda: 'enter copy & follow' in pane_text(), 'selection fixture missing')
+                selected_header = subprocess.check_output([
+                    sys.executable, str(script), '--internal-footer', sock, '%0', '24', '80'],
+                    env=env, text=True)
+                self.assertIn('GPT-Example high', selected_header)
+                self.assertIn('esc clear', selected_header)
+                self.assertTrue(folded(80, 24), 'selection resized the composer')
                 send('send-keys', '-l', 'd')
                 wait_for(lambda: state()[1] == 22, 'dialog viewport was cropped')
                 send('send-keys', '-l', 'c')

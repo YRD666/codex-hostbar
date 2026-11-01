@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Keep the composer footer folded while selection or scrollback navigation hints
+  replace the normal shortcuts. Preserve those hints in the outer status row.
+- Cover typed input with a retained selection in the terminal regression test.
+
 ## 0.1.3
 
 - Keep mouse support enabled in the private tmux server so Codex captures wheel
