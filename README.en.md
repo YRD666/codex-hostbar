@@ -44,23 +44,14 @@ selected path. By default, `/srv` is shown only when it is a mount point;
 ## Behavior and limitations
 
 - A private tmux server folds recognized native fullscreen footer rows into one.
-  Unknown screens and warning panels regain the normal viewport on
+  Unknown screens, warning panels and copy mode regain the normal viewport on
   the next refresh (approximately one second). The external title becomes `Codex`.
 - Supports the English footer text structure observed in Codex 0.166.0. Upstream
   changes may produce extra native rows. This is not an upstream rendering API.
 - Use at least 80 columns for useful detail. Narrow screens truncate values;
   fewer than 35 columns or 10 rows disables folding. Complex emoji widths are
   approximate.
-- The outer terminal owns mouse selection, copying and wheel handling by default.
-  Use its existing copy/paste shortcuts; local selection does not require OSC 52.
-- Use `PageUp` / `PageDown` to browse Codex history, and `Esc` to return to the
-  latest content. `Shift+PageUp` forwards Codex's detailed transcript shortcut;
-  `F2` opens the native warning panel.
-- If you explicitly enter tmux copy mode (`Ctrl+B`, then `[`), `Ctrl+C` or
-  `Enter` copies the selection and `Esc` cancels. Status refreshes preserve its
-  geometry. This explicit mode uses OSC 52 to forward copies to the desktop,
-  which requires client support. `Ctrl+B`, then `]` pastes the tmux buffer;
-  it may differ from the desktop clipboard.
+- `F2`: native warning panel. `Shift+PageUp`: tmux history; `q`: return.
 - **Ctrl+Z closes this private terminal session, not Unix suspend.** `fg` cannot
   restore it. Use `codex-hostbar -- resume --last` where appropriate. Hostbar
   does not explicitly stop the shared Codex daemon or other tmux sessions.

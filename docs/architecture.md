@@ -13,36 +13,20 @@ The two native rows then extend below the visible pane area, while the composer
 stays above them. Hostbar combines their information in its first status row.
 The second row is generated from `/proc/meminfo` and `statvfs`.
 
-If the footer is unrecognized, a menu opens, or the terminal
+If the footer is unrecognized, a menu opens, copy mode is active, or the terminal
 is too small, the window height returns to client height minus two. Unknown
 screens are not intentionally cropped. A resize can take one refresh cycle to
 settle. This adapter depends on upstream layout details and is deliberately
 limited to known text patterns; it is not a general-purpose screen parser.
-
-While tmux copy mode is active, the status renderer leaves window geometry
-unchanged: a resize would erase the snapshot's selection. The first status row
-shows copy/cancel keys until copy mode ends. Fallback mouse selection remains
-after release; Ctrl+C/Enter copies to the tmux buffer and requests an OSC 52
-clipboard write to the attached terminal. Esc cancels without copying. Clipboard
-acceptance and desktop paste shortcuts remain the SSH client's responsibility.
 
 ## Isolation and data
 
 Each launch creates a mode-0700 temporary directory under `/tmp`, containing its
 private tmux socket and generated config. No global tmux server is changed.
 The launcher removes its own private server and temporary directory on normal
-exit, including Ctrl+Z detach. Abrupt SIGKILL cannot guarantee cleanup. Hostbar
-does not write pane captures or chat history to disk. Fullscreen Codex owns the
-conversation transcript; `Shift+PageUp` forwards Codex's native Transcript
-shortcut, and scrolling happens inside that view.
-
-The private tmux server defaults to mouse off, preserving local selection and
-copy shortcuts in the outer terminal without requiring OSC 52. Codex probes
-this option at startup. For an already-running process with capture still
-enabled, the status helper writes only mouse-disable sequences to the pane's
-output TTY when the option is off. It does not send keystrokes, reset the screen,
-or restart Codex. Keyboard PageUp/PageDown still reach Codex history; wheel
-handling belongs to the outer terminal in this mode.
+exit, including Ctrl+Z detach. Abrupt SIGKILL cannot guarantee cleanup. A private
+tmux history buffer exists in memory while the session runs; Hostbar does not
+write pane captures or chat history to disk. Codex may retain its own history.
 
 Executable and prompt arguments are passed as an argv list, never concatenated
 into a shell command. Status helper paths are expanded from quoted environment
@@ -62,7 +46,6 @@ No shell startup file, network service, package manager, or Codex setting is edi
 Unit tests cover width limits, Chinese text, warning priority, inline/menu
 rejection, metrics, argument preservation and safe install/uninstall behavior.
 The tmux integration test launches a deterministic simulated fullscreen program
-in a real pseudo-terminal, resizes it, opens a mock dialog and Transcript, enters
-copy mode, holds a mouse selection across refreshes, checks copied bytes in the
-tmux buffer and terminal output, and exits with Ctrl+Z. Real Codex compatibility must also be checked
-manually for each newly supported version.
+in a real pseudo-terminal, resizes it, opens a mock dialog, enters copy mode and
+exits with Ctrl+Z. Real Codex compatibility must also be checked manually for
+each newly supported version.

@@ -36,49 +36,6 @@ class FooterTests(unittest.TestCase):
                      ['Some chat content', '? for shortcuts']):
             self.assertIsNone(h.combine(rows, 100))
 
-    def test_typed_composer_with_hidden_hint_row_is_folded(self):
-        rows = ['› 你好', '',
-                'GPT-Example high · weekly 80% left · Context 99% left · 10K used',
-                '']
-        result = h.combine(rows, 100)
-        self.assertIsNotNone(result)
-        self.assertIn('GPT-Example high', result)
-        self.assertNotIn('Codex', result)
-
-    def test_status_like_text_without_composer_is_not_folded(self):
-        rows = ['unrelated screen', '',
-                'GPT-Example high · weekly 80% left · Context 99% left', '']
-        self.assertIsNone(h.combine(rows, 100))
-
-    def test_draft_during_running_task_keeps_queue_hint_folded(self):
-        for hints in ('tab to queue message', 'tab to queue'):
-            rows = ['› 你好', '', self.rows[0], hints]
-            result = h.combine(rows, 135)
-            self.assertIsNotNone(result)
-            self.assertIn('GPT-Example', result)
-            self.assertIn(hints, result)
-            for width in range(35, 136):
-                self.assertLessEqual(h.cells(h.combine(rows, width)), width)
-            self.assertIsNone(h.combine(['other screen', '', self.rows[0], hints], 135))
-
-    def test_selection_and_scrollback_footer_keep_composer_folded(self):
-        for hints in ('^c copy · enter copy & follow · esc clear',
-                      'enter copy & follow · esc clear', 'esc clear',
-                      'Earlier messages available.  esc latest',
-                      'New activity · enter/esc latest',
-                      'New activity · Earlier messages available.  enter/esc latest · ? shortcuts',
-                      '↑ Loading earlier messages… · esc latest'):
-            with self.subTest(hints=hints):
-                rows = ['› draft', '', self.rows[0], hints]
-                result = h.combine(rows, 180)
-                self.assertIsNotNone(result)
-                self.assertIn('GPT-Example', result)
-                self.assertIn(hints, result)
-                self.assertLessEqual(h.cells(result), 180)
-                for width in (40, 80, 135):
-                    self.assertLessEqual(h.cells(h.combine(rows, width)), width)
-                self.assertIsNone(h.combine(['other screen', '', self.rows[0], hints], 135))
-
     def test_host_fits_80_columns(self):
         result = h.compact_host('demo | 内存 4.5/8.0 GiB 56% | 根盘 32.0/80.0 GiB 40% | 数据盘 75.0/100.0 GiB 75%', 79)
         for value in ('4.5/8.0', '32.0/80.0', '75.0/100.0'):

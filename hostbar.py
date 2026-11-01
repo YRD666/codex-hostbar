@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.7'
+VERSION = '0.1.0'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -54,30 +54,15 @@ def combine(rows, width):
     if len(rows) < 2:
         return None
     status, hints = (safe_text(line).strip() for line in rows[-2:])
-    native_status = r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b'
-    native_hints = r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt'
-    has_composer = any(re.match(r'^\s*›(?:\s|$)', line) for line in rows[:-2])
-    interaction_hints = has_composer and bool(re.fullmatch(
-        r'(?:(?:(?:\^c|⌃c|ctrl\+c) copy · )?enter copy & follow · esc clear'
-        r'|enter copy\+↓ · esc|esc clear|tab to queue(?: message)?'
-        r'|(?:(?:New activity · )?(?:Earlier messages available\.  )?'
-        r'|↑ Loading earlier messages… · )(?:enter/esc|esc) latest)'
-        r'(?: · \? shortcuts)?', hints))
-    if not status or not re.search(native_status, status):
+    if not re.search(r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt', hints):
         return None
-    if re.search(native_hints, hints):
-        pass
-    elif interaction_hints:
-        pass
-    elif not hints and has_composer:
-        # Codex hides the hint row while the composer contains text. The blank
-        # final row plus a nearby composer prompt distinguishes that state from
-        # an arbitrary status-like line on an unknown screen.
-        hints = ''
-    else:
+    if not status or not re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b', status):
+        return None
+    # A single inline footer is not two fullscreen rows.
+    if re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b', hints):
         return None
     warning = re.search(r'⚠\s*\d+\s+warnings?', hints)
-    right = hints if interaction_hints else warning.group() + ' · f2' if warning else ''
+    right = warning.group() + ' · f2' if warning else ''
     if right and cells(right) + 2 >= width:
         return fit(right, width)
     left = status
@@ -145,35 +130,14 @@ def tmux(sock, *args):
                                    stderr=subprocess.DEVNULL, timeout=2)
 
 
-def release_mouse(captured, enabled, pane_tty):
-    """Honor mouse-off for Codex processes started before the option changed."""
-    if captured != '1' or enabled not in ('0', 'off'):
-        return
-    if not re.fullmatch(r'/dev/pts/[0-9]+', pane_tty):
-        return
-    # Write only mouse-mode resets to the pane's output side. This does not
-    # inject input, clear its screen, or restart the running Codex process.
-    fd = os.open(pane_tty, os.O_WRONLY | os.O_NOCTTY | os.O_NONBLOCK)
-    try:
-        os.write(fd, b'\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l')
-    finally:
-        os.close(fd)
-
-
 def render_footer(args):
     sock, pane, height, width = args
     height, width = int(height), int(width)
     state = tmux(sock, 'display-message', '-p', '-t', pane,
-                 '#{pane_height} #{pane_width} #{pane_in_mode} '
-                 '#{mouse_any_flag} #{mouse} #{pane_tty}').split()
-    pane_height, pane_width, in_mode = map(int, state[:3])
-    release_mouse(*state[3:])
-    if in_mode:
-        # Resizing a tmux copy-mode snapshot clears its selection. Keep its
-        # geometry until the user finishes copying; live chat resumes afterward.
-        return ' ' + fit('Codex · Ctrl+C copy · Esc cancel', width - 1)
+                 '#{pane_height} #{pane_width} #{pane_in_mode}').split()
+    pane_height, pane_width, in_mode = map(int, state)
     rows = tmux(sock, 'capture-pane', '-p', '-t', pane,
-                '-S', str(max(0, pane_height - 12))).splitlines()
+                '-S', str(max(0, pane_height - 2))).splitlines()
     header = None
     if not in_mode and height >= 10 and width >= 35:
         header = combine(rows, width - 2)
@@ -197,27 +161,16 @@ set -g status-format[0] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --int
 set -g status-format[1] '#("$CODEX_HOSTBAR_PYTHON" "$CODEX_HOSTBAR_SCRIPT" --internal-host "#{client_width}")'
 set -g history-limit 50000
 set -g mouse off
-set -s set-clipboard external
 set -g default-terminal 'tmux-256color'
 set -g allow-rename off
 set -g set-titles off
 set -g destroy-unattached on
 set -g detach-on-destroy on
 set -as terminal-overrides ',xterm*:smcup@:rmcup@'
-bind -n WheelUpPane if-shell -F '#{mouse_any_flag}' 'send-keys -M' 'send-keys PageUp'
-bind -n WheelDownPane if-shell -F '#{mouse_any_flag}' 'send-keys -M' 'send-keys PageDown'
-bind -n S-PageUp send-keys C-t
+bind -n S-PageUp copy-mode -u
 bind -n C-z detach-client
 bind -T copy-mode q send-keys -X cancel
 bind -T copy-mode-vi q send-keys -X cancel
-bind -T copy-mode MouseDragEnd1Pane send-keys -X stop-selection
-bind -T copy-mode-vi MouseDragEnd1Pane send-keys -X stop-selection
-bind -T copy-mode C-c if-shell -F '#{selection_present}' 'send-keys -X copy-selection-and-cancel' 'send-keys -X cancel'
-bind -T copy-mode-vi C-c if-shell -F '#{selection_present}' 'send-keys -X copy-selection-and-cancel' 'send-keys -X cancel'
-bind -T copy-mode Enter send-keys -X copy-selection-and-cancel
-bind -T copy-mode-vi Enter send-keys -X copy-selection-and-cancel
-bind -T copy-mode Escape send-keys -X cancel
-bind -T copy-mode-vi Escape send-keys -X cancel
 '''
 
 
