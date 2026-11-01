@@ -99,6 +99,13 @@ class TerminalTests(unittest.TestCase):
                 wait_for(lambda: state()[1] == 22, 'dialog viewport was cropped')
                 send('send-keys', '-l', 'c')
                 wait_for(lambda: state()[1] == 24, 'chat footer did not fold again')
+                send('send-keys', '-l', 't')
+                wait_for(lambda: b'tab to queue message' in output, 'queue hint not drawn')
+                # Let the periodic footer job observe the changed native hint.
+                time.sleep(2)
+                drain()
+                self.assertTrue(folded(80, 24), 'typing during a running task unfolded the footer')
+                send('send-keys', '-l', 'c')
                 send('copy-mode')
                 wait_for(lambda: state()[1] == 22, 'copy mode viewport was cropped')
                 send('send-keys', '-X', 'cancel')

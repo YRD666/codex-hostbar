@@ -20,6 +20,17 @@ class FooterTests(unittest.TestCase):
         self.assertNotIn('\n', result)
         self.assertNotIn('for shortcuts', result)
 
+    def test_running_task_queue_hint_folds_and_stays_visible(self):
+        for hint in ('tab to queue message', 'tab to queue'):
+            result = h.combine([self.rows[0], hint], 149)
+            self.assertIsNotNone(result)
+            self.assertIn('GPT-Example', result)
+            self.assertIn(hint, result)
+        for rows in (['Dialog text', 'tab to queue message'],
+                     [self.rows[0], ''],
+                     [self.rows[0], 'Unrecognized tab to queue message text']):
+            self.assertIsNone(h.combine(rows, 149))
+
     def test_all_widths_are_bounded(self):
         for width in range(0, 160):
             with self.subTest(width=width):

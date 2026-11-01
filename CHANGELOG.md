@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Keep the status footer folded when typing during a running task displays
+  `tab to queue message`, preserving the queue hint in the merged row.
+
 ## 0.1.0
 
 - Two adjacent rows for Codex status and Linux host metrics.
