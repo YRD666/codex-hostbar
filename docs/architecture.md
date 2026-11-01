@@ -24,9 +24,10 @@ limited to known text patterns; it is not a general-purpose screen parser.
 Each launch creates a mode-0700 temporary directory under `/tmp`, containing its
 private tmux socket and generated config. No global tmux server is changed.
 The launcher removes its own private server and temporary directory on normal
-exit, including Ctrl+Z detach. Abrupt SIGKILL cannot guarantee cleanup. A private
-tmux history buffer exists in memory while the session runs; Hostbar does not
-write pane captures or chat history to disk. Codex may retain its own history.
+exit, including Ctrl+Z detach. Abrupt SIGKILL cannot guarantee cleanup. Hostbar
+does not write pane captures or chat history to disk. Fullscreen Codex owns the
+conversation transcript; `Shift+PageUp` forwards Codex's native Transcript
+shortcut, and scrolling happens inside that view.
 
 Executable and prompt arguments are passed as an argv list, never concatenated
 into a shell command. Status helper paths are expanded from quoted environment
@@ -46,6 +47,6 @@ No shell startup file, network service, package manager, or Codex setting is edi
 Unit tests cover width limits, Chinese text, warning priority, inline/menu
 rejection, metrics, argument preservation and safe install/uninstall behavior.
 The tmux integration test launches a deterministic simulated fullscreen program
-in a real pseudo-terminal, resizes it, opens a mock dialog, enters copy mode and
-exits with Ctrl+Z. Real Codex compatibility must also be checked manually for
-each newly supported version.
+in a real pseudo-terminal, resizes it, opens a mock dialog and Transcript, enters
+copy mode and exits with Ctrl+Z. Real Codex compatibility must also be checked
+manually for each newly supported version.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Make `Shift+PageUp` open Codex's native Transcript view so earlier
+  conversation content remains reachable in fullscreen mode.
+- Add terminal regression coverage for the Transcript shortcut and viewport.
+
 ## 0.1.1
 
 - Keep the two-row layout while the composer contains text and Codex hides its

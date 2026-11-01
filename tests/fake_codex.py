@@ -7,12 +7,16 @@ import tty
 
 dialog = False
 draft = False
+transcript = False
 
 
 def draw(*_):
     width, height = os.get_terminal_size()
     out = '\x1b[2J\x1b[HFixture chat'
-    if dialog:
+    if transcript:
+        out += '\x1b[2;1H/ T R A N S C R I P T'
+        out += '\x1b[4;1HOlder transcript line'
+    elif dialog:
         out += f'\x1b[{height};1Hk keep & next · esc dismiss & close'
     elif draft:
         out += f'\x1b[{height-3};1H› 你好'
@@ -34,11 +38,18 @@ while True:
     char = os.read(sys.stdin.fileno(), 1)
     if not char or char == b'q':
         break
+    if char == b'\x14':
+        transcript = True
+        dialog = False
+        draft = False
+    if char == b'\x1b' and transcript:
+        transcript = False
     if char == b'd':
         dialog = True
     if char == b'c':
         dialog = False
         draft = False
+        transcript = False
     if char == b'i':
         dialog = False
         draft = True

@@ -22,6 +22,11 @@ spec.loader.exec_module(h)
 
 @unittest.skipUnless(sys.platform == 'linux' and shutil.which('tmux'), 'requires Linux and tmux')
 class TerminalTests(unittest.TestCase):
+    def test_shift_page_up_opens_codex_transcript(self):
+        config = h.tmux_config()
+        self.assertIn('bind -n S-PageUp send-keys C-t', config)
+        self.assertNotIn('bind -n S-PageUp copy-mode', config)
+
     def test_resize_dialog_copy_mode_and_ctrl_z(self):
         with tempfile.TemporaryDirectory() as tmp:
             # Paths and labels that must never be evaluated as shell/tmux code.
@@ -110,6 +115,11 @@ class TerminalTests(unittest.TestCase):
                 wait_for(lambda: state()[1] == 22, 'dialog viewport was cropped')
                 send('send-keys', '-l', 'c')
                 wait_for(lambda: state()[1] == 24, 'chat footer did not fold again')
+                os.write(master, b'\x1b[5;2~')
+                wait_for(lambda: '/ T R A N S C R I P T' in pane_text() and state()[1] == 22,
+                         'Shift+PageUp did not open the Codex transcript at full viewport')
+                send('send-keys', 'Escape')
+                wait_for(lambda: state()[1] == 24, 'transcript exit failed')
                 send('copy-mode')
                 wait_for(lambda: state()[1] == 22, 'copy mode viewport was cropped')
                 send('send-keys', '-X', 'cancel')

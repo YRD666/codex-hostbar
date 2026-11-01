@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -173,7 +173,7 @@ set -g set-titles off
 set -g destroy-unattached on
 set -g detach-on-destroy on
 set -as terminal-overrides ',xterm*:smcup@:rmcup@'
-bind -n S-PageUp copy-mode -u
+bind -n S-PageUp send-keys C-t
 bind -n C-z detach-client
 bind -T copy-mode q send-keys -X cancel
 bind -T copy-mode-vi q send-keys -X cancel
