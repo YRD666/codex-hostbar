@@ -6,6 +6,7 @@ import sys
 import tty
 
 dialog = False
+queued_draft = False
 
 
 def draw(*_):
@@ -14,9 +15,10 @@ def draw(*_):
     if dialog:
         out += f'\x1b[{height};1Hk keep & next · esc dismiss & close'
     else:
-        out += f'\x1b[{height-3};1H> Draft input'
+        out += f'\x1b[{height-3};1H' + ('› hello' if queued_draft else '> Draft input')
         out += f'\x1b[{height-1};1HGPT-Example high · weekly 80% left · Context 100% left'
-        out += f'\x1b[{height};1H← for agents · ? for shortcuts  ⚠ 2 warnings · f2 to view'
+        hint = 'tab to queue message' if queued_draft else '← for agents · ? for shortcuts  ⚠ 2 warnings · f2 to view'
+        out += f'\x1b[{height};1H{hint}'
         out += f'\x1b[{height-3};3H'
     sys.stdout.write(out)
     sys.stdout.flush()
@@ -33,4 +35,7 @@ while True:
         dialog = True
     if char == b'c':
         dialog = False
+        queued_draft = False
+    if char == b't':
+        queued_draft = True
     draw()

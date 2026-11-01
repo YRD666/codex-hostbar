@@ -54,7 +54,8 @@ def combine(rows, width):
     if len(rows) < 2:
         return None
     status, hints = (safe_text(line).strip() for line in rows[-2:])
-    if not re.search(r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt', hints):
+    queue_hint = bool(re.fullmatch(r'tab to queue(?: message)?', hints))
+    if not queue_hint and not re.search(r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt', hints):
         return None
     if not status or not re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b', status):
         return None
@@ -62,7 +63,7 @@ def combine(rows, width):
     if re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b', hints):
         return None
     warning = re.search(r'⚠\s*\d+\s+warnings?', hints)
-    right = warning.group() + ' · f2' if warning else ''
+    right = hints if queue_hint else warning.group() + ' · f2' if warning else ''
     if right and cells(right) + 2 >= width:
         return fit(right, width)
     left = status
