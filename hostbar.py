@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unicodedata
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 NONINTERACTIVE = {
     'exec', 'e', 'review', 'login', 'logout', 'mcp', 'plugin', 'app-server',
     'remote-control', 'completion', 'update', 'doctor', 'sandbox', 'debug',
@@ -54,12 +54,18 @@ def combine(rows, width):
     if len(rows) < 2:
         return None
     status, hints = (safe_text(line).strip() for line in rows[-2:])
-    if not re.search(r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt', hints):
+    native_status = r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b'
+    native_hints = r'for agents|for shortcuts|⚠\s*\d+\s+warnings?\b|esc to interrupt'
+    if not status or not re.search(native_status, status):
         return None
-    if not status or not re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b|\btokens\b|\bused\b', status):
-        return None
-    # A single inline footer is not two fullscreen rows.
-    if re.search(r'GPT-|gpt-|\bContext\b|\bweekly\b', hints):
+    if re.search(native_hints, hints):
+        pass
+    elif not hints and any(re.match(r'^\s*›(?:\s|$)', line) for line in rows[:-2]):
+        # Codex hides the hint row while the composer contains text. The blank
+        # final row plus a nearby composer prompt distinguishes that state from
+        # an arbitrary status-like line on an unknown screen.
+        hints = ''
+    else:
         return None
     warning = re.search(r'⚠\s*\d+\s+warnings?', hints)
     right = warning.group() + ' · f2' if warning else ''
@@ -137,7 +143,7 @@ def render_footer(args):
                  '#{pane_height} #{pane_width} #{pane_in_mode}').split()
     pane_height, pane_width, in_mode = map(int, state)
     rows = tmux(sock, 'capture-pane', '-p', '-t', pane,
-                '-S', str(max(0, pane_height - 2))).splitlines()
+                '-S', str(max(0, pane_height - 12))).splitlines()
     header = None
     if not in_mode and height >= 10 and width >= 35:
         header = combine(rows, width - 2)

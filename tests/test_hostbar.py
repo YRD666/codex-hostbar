@@ -36,6 +36,20 @@ class FooterTests(unittest.TestCase):
                      ['Some chat content', '? for shortcuts']):
             self.assertIsNone(h.combine(rows, 100))
 
+    def test_typed_composer_with_hidden_hint_row_is_folded(self):
+        rows = ['› 你好', '',
+                'GPT-Example high · weekly 80% left · Context 99% left · 10K used',
+                '']
+        result = h.combine(rows, 100)
+        self.assertIsNotNone(result)
+        self.assertIn('GPT-Example high', result)
+        self.assertNotIn('Codex', result)
+
+    def test_status_like_text_without_composer_is_not_folded(self):
+        rows = ['unrelated screen', '',
+                'GPT-Example high · weekly 80% left · Context 99% left', '']
+        self.assertIsNone(h.combine(rows, 100))
+
     def test_host_fits_80_columns(self):
         result = h.compact_host('demo | 内存 4.5/8.0 GiB 56% | 根盘 32.0/80.0 GiB 40% | 数据盘 75.0/100.0 GiB 75%', 79)
         for value in ('4.5/8.0', '32.0/80.0', '75.0/100.0'):

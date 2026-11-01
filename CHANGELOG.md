@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Keep the two-row layout while the composer contains text and Codex hides its
+  native shortcut row.
+- Add regression coverage for typed input while preserving unknown-screen and
+  warning-panel viewport protection.
+
 ## 0.1.0
 
 - Two adjacent rows for Codex status and Linux host metrics.

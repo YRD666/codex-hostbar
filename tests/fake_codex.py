@@ -6,6 +6,7 @@ import sys
 import tty
 
 dialog = False
+draft = False
 
 
 def draw(*_):
@@ -13,6 +14,10 @@ def draw(*_):
     out = '\x1b[2J\x1b[HFixture chat'
     if dialog:
         out += f'\x1b[{height};1Hk keep & next · esc dismiss & close'
+    elif draft:
+        out += f'\x1b[{height-3};1H› 你好'
+        out += f'\x1b[{height-1};1HGPT-Example high · weekly 80% left · Context 99% left'
+        out += f'\x1b[{height-3};7H'
     else:
         out += f'\x1b[{height-3};1H> Draft input'
         out += f'\x1b[{height-1};1HGPT-Example high · weekly 80% left · Context 100% left'
@@ -33,4 +38,8 @@ while True:
         dialog = True
     if char == b'c':
         dialog = False
+        draft = False
+    if char == b'i':
+        dialog = False
+        draft = True
     draw()

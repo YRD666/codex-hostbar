@@ -82,6 +82,10 @@ class TerminalTests(unittest.TestCase):
                 subprocess.run(['tmux', '-S', sock, *args], check=True,
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+            def pane_text():
+                return subprocess.check_output(['tmux', '-S', sock, 'capture-pane',
+                    '-p', '-t', '%0'], stderr=subprocess.DEVNULL).decode()
+
             def folded(width, height):
                 actual_width, actual_height, cursor = state()
                 return (actual_width, actual_height) == (width, height) and cursor < height - 2
@@ -95,6 +99,13 @@ class TerminalTests(unittest.TestCase):
                     # This test client has no controlling TTY; emulate its resize signal.
                     proc.send_signal(signal.SIGWINCH)
                     wait_for(lambda: folded(width, height), 'resize or composer redraw failed')
+                send('send-keys', '-l', 'i')
+                wait_for(lambda: '你好' in pane_text(), 'fixture did not enter typed composer state')
+                typed_header = subprocess.check_output([
+                    sys.executable, str(script), '--internal-footer', sock, '%0', '24', '80'],
+                    env=env, text=True)
+                self.assertIn('GPT-Example high', typed_header)
+                self.assertTrue(folded(80, 24), 'typed composer footer was not folded')
                 send('send-keys', '-l', 'd')
                 wait_for(lambda: state()[1] == 22, 'dialog viewport was cropped')
                 send('send-keys', '-l', 'c')
